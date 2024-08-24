@@ -89,7 +89,7 @@ if __name__ == '__main__':
                         help='Number of channels in convolutional blocks')
     parser.add_argument('--P', default=3, type=int,
                         help='Kernel size in convolutional blocks')
-    parser.add_argument('--X', default=8, type=int,
+    parser.add_argument('--X', default=4, type=int,
                         help='Number of convolutional blocks in each repeat')
     parser.add_argument('--R', default=4, type=int,
                         help='Number of repeats')
