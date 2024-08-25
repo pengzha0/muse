@@ -68,10 +68,10 @@ class Basic_block(nn.Module):
     def __init__(self, in_c, out_c):
         super(Basic_block, self).__init__()
         self.conv=BNNConv1d(in_c,out_c, kernel_size=3,stride=1, padding=1, bias=False)
-        self.bn = nn.BatchNorm1d(out_c)
+        self.bn = nn.GroupNorm(1, out_c, eps=1e-8)
         self.act = nn.PReLU()
     def forward(self, x):
-        return self.act(self.bn(self.conv))
+        return self.act(self.bn(self.conv(x)))
 
 
 class TemporalConvNet(nn.Module):
@@ -79,11 +79,11 @@ class TemporalConvNet(nn.Module):
         super(TemporalConvNet, self).__init__()
         self.C = C
         self.layer_norm = ChannelWiseLayerNorm(N)
-        self.bottleneck_conv1x1 = BNNConv1d(N, B, 3,padding=1, bias=False)
+        self.bottleneck_conv1x1 = Basic_block(N, B)
 
         # Audio TCN
         tcn_blocks = []
-        tcn_blocks += [BNNConv1d(B*3, B, kernel_size=3,stride=1, padding=1, bias=False)]
+        tcn_blocks += [Basic_block(B*3, B)]
         for x in range(X):
             dilation = 2**x
             padding = (P - 1) * dilation // 2
@@ -99,8 +99,8 @@ class TemporalConvNet(nn.Module):
         self.visual_conv = nn.Sequential(*ve_blocks)
 
         # Audio and visual seprated layers before concatenation
-        self.ve_conv1x1 = _clones(BNNConv1d(512, B,  kernel_size=3,stride=1, padding=1, bias=False),R)
-        self.ve_conv1x1_SE = _clones(BNNConv1d(512, B,  kernel_size=3,stride=1, padding=1, bias=False),R)
+        self.ve_conv1x1 = _clones(Basic_block(512, B),R)
+        self.ve_conv1x1_SE = _clones(Basic_block(512, B),R)
 
         # speaker embedding extraction and classification
         self.se_net=_clones(SpeakerEmbedding(B), R)
@@ -145,18 +145,19 @@ class TemporalConvNet(nn.Module):
 class SpeakerEmbedding(nn.Module):
     def __init__(self, B, R=3, H=256):
         super(SpeakerEmbedding, self).__init__()
-        self.conv_proj = BNNConv1d(B*2, B,kernel_size=3,stride=1,padding=1, bias=False)
+        self.conv_proj = Basic_block(B*2, B)
         Conv_1=BNNConv1d(B, H, kernel_size=3,stride=1,padding=1, bias=False)
-        norm_1=nn.BatchNorm1d(H)
+        norm_1=nn.GroupNorm(1, H, eps=1e-8)
         prelu_1=nn.PReLU()
         Conv_2=BNNConv1d(H, B,kernel_size=3,stride=1,padding=1, bias=False)
-        norm_2=nn.BatchNorm1d(B)
+        norm_2=nn.GroupNorm(1, B, eps=1e-8)
+        prelu_2=nn.PReLU()
         self.resnet=_clones(nn.Sequential(Conv_1, norm_1,\
-            prelu_1, Conv_2, norm_2), R)
-        self.prelu=_clones(nn.PReLU(),R)
+            prelu_1, Conv_2, norm_2,prelu_2), R)
+        # self.prelu=_clones(nn.PReLU(),R)
         self.maxPool=_clones(nn.AvgPool1d(3),R)
 
-        self.conv=BNNConv1d(B,B,kernel_size=3,stride=1,padding=1, bias=True)
+        self.conv=Basic_block(B,B)
         self.avgPool=nn.AdaptiveAvgPool1d(1)
 
     def forward(self, x):
@@ -164,8 +165,8 @@ class SpeakerEmbedding(nn.Module):
         for i in range(len(self.resnet)):
             residual = x
             x = self.resnet[i](x)
-            x = self.prelu[i](x+residual)
-            x = self.maxPool[i](x)
+            # x = self.prelu[i](x+residual)
+            x = self.maxPool[i](x+residual)
 
         x = self.conv(x)
         x = self.avgPool(x)
@@ -173,18 +174,17 @@ class SpeakerEmbedding(nn.Module):
         return x
 
 
-
 class VisualConv1D(nn.Module):
     def __init__(self):
         super(VisualConv1D, self).__init__()
         relu = nn.PReLU()
-        norm_1 = nn.BatchNorm1d(512)
+        norm_1 = GlobalLayerNorm(512)
         dsconv = BNNConv1d(512, 512, 3, stride=1, padding=1, bias=False)
         prelu = nn.PReLU()
-        norm_2 = nn.BatchNorm1d(512)
+        norm_2 = GlobalLayerNorm(512)
         pw_conv = BNNConv1d(512, 512, 3, stride=1, padding=1, bias=False)
 
-        self.net = nn.Sequential(relu, norm_1 ,dsconv, prelu, norm_2, pw_conv)
+        self.net = nn.Sequential(relu,norm_1,dsconv,norm_2, prelu, pw_conv)
 
     def forward(self, x):
         out = self.net(x)
@@ -195,12 +195,13 @@ class TemporalBlock(nn.Module):
                  stride, padding, dilation):
         super(TemporalBlock, self).__init__()
         conv1x1 = BNNConv1d(in_channels, out_channels, 3,padding=1,stride=1, bias=False)
+        bn =  nn.GroupNorm(1, out_channels, eps=1e-8)
         prelu = nn.PReLU()
-        norm = GlobalLayerNorm(out_channels)
+        # norm = GlobalLayerNorm(out_channels)
         dsconv = DepthwiseSeparableConv(out_channels, in_channels, kernel_size,
                                         stride, padding, dilation)
         # Put together
-        self.net = nn.Sequential(conv1x1, prelu, norm, dsconv)
+        self.net = nn.Sequential(conv1x1,bn, prelu, dsconv)
 
     def forward(self, x):
 
@@ -220,12 +221,12 @@ class DepthwiseSeparableConv(nn.Module):
         depthwise_conv = BNNConv1d(in_channels, in_channels, kernel_size,
                                    stride=stride, padding=1,                                   
                                    bias=False)
+        bn =  nn.GroupNorm(1, in_channels, eps=1e-8)
 
         prelu = nn.PReLU()
-        norm = GlobalLayerNorm(in_channels)
-        pointwise_conv = BNNConv1d(in_channels, out_channels,3,stride=1,padding=1, bias=False)
-        self.net = nn.Sequential(depthwise_conv, prelu, norm,
-                                 pointwise_conv)
+        # norm = GlobalLayerNorm(in_channels)
+        pointwise_conv = Basic_block(in_channels, out_channels)
+        self.net = nn.Sequential(depthwise_conv,bn, prelu, pointwise_conv)
 
     def forward(self, x):
         return self.net(x)

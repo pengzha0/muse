@@ -150,6 +150,7 @@ class Solver(object):
         # total_acc_1=0
         # total_acc_2=0
         # total_acc_3=0
+        sisnr_loss=0
         speaker_loss=0
         avg_sisnri = 0
         for i, (a_mix, a_tgt, v_tgt, speaker) in enumerate(data_loader):
