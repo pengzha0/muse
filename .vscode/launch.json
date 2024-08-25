@@ -19,7 +19,7 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
-                "CUDA_VISIBLE_DEVICES": "0,1",
+                "CUDA_VISIBLE_DEVICES": "6,7",
                 "OMP_NUM_THREADS": "12"
             },
             "args": [

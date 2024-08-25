@@ -1,6 +1,6 @@
 #!/bin/sh
 
-gpu_id=0,1,2,3
+gpu_id=4,5,6,7
 continue_from=
 
 if [ -z ${continue_from} ]; then
@@ -14,12 +14,12 @@ CUDA_VISIBLE_DEVICES="$gpu_id" \
 python -W ignore \
 -m torch.distributed.launch \
 --nproc_per_node=4 \
---master_port=1246 \
+--master_port=1249 \
 main.py \
 \
 --log_name $log_name \
 \
---batch_size 6 \
+--batch_size 2 \
 --audio_direc '/data/vgc/users/public/voxceleb2/muse/audio_clean/' \
 --visual_direc '/data/vgc/users/public/voxceleb2/muse/lip/' \
 --mix_lst_path '/data/vgc/users/public/voxceleb2/uesv/mixture_data_list_2_800mix.csv' \

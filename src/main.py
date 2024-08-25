@@ -56,13 +56,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("avConv-tasnet")
     
     # Dataloader
-    parser.add_argument('--mix_lst_path', type=str, default='/home/panzexu/datasets/LRS2/audio/2_mix_min/mixture_data_list_2mix.csv',
+    parser.add_argument('--mix_lst_path', type=str, default='/data/vgc/users/public/voxceleb2/uesv/mixture_data_list_2_800mix.csv',
                         help='directory including train data')
-    parser.add_argument('--audio_direc', type=str, default='/home/panzexu/datasets/LRS2/audio/Audio/',
+    parser.add_argument('--audio_direc', type=str, default='/data/vgc/users/public/voxceleb2/muse/audio_clean/',
                         help='directory including validation data')
-    parser.add_argument('--visual_direc', type=str, default='/home/panzexu/datasets/LRS2/lip/',
+    parser.add_argument('--visual_direc', type=str, default='/data/vgc/users/public/voxceleb2/muse/lip/',
                         help='directory including test data')
-    parser.add_argument('--mixture_direc', type=str, default='/home/panzexu/datasets/LRS2/audio/2_mix_min/',
+    parser.add_argument('--mixture_direc', type=str, default='/data/vgc/users/public/voxceleb2/uesv/audio_mixture/2_mix_min_train/',
                         help='directory of audio')
 
 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
 
     # Log and Visulization
-    parser.add_argument('--log_name', type=str, default=None,
+    parser.add_argument('--log_name', type=str, default="debug",
                         help='the name of the log')
     parser.add_argument('--use_tensorboard', type=int, default=0,
                         help='Whether to use use_tensorboard')
