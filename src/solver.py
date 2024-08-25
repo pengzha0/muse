@@ -195,6 +195,8 @@ class Solver(object):
 
             total_loss += loss.data
             total_loss_speaker += speaker_loss
+            if i%100 == 0:
+                print(f"sisnr_loss:{sisnr_loss}   speaker_loss:{speaker_loss}")
  
         # print("speaker recognition acc: %s"%str(total_acc_0/(i+1)*100))
         # print("speaker recognition acc: %s"%str(total_acc_1/(i+1)*100))

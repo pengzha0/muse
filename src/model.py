@@ -64,6 +64,15 @@ class Decoder(nn.Module):
         est_source = overlap_and_add(est_source, self.L//2) # M x C x T
         return est_source
 
+class Basic_block(nn.Module):
+    def __init__(self, in_c, out_c):
+        super(Basic_block, self).__init__()
+        self.conv=BNNConv1d(in_c,out_c, kernel_size=3,stride=1, padding=1, bias=False)
+        self.bn = nn.BatchNorm1d(out_c)
+        self.act = nn.PReLU()
+    def forward(self, x):
+        return self.act(self.bn(self.conv))
+
 
 class TemporalConvNet(nn.Module):
     def __init__(self, N, B, H, P, X, R, C, M):

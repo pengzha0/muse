@@ -157,9 +157,16 @@ class BNNConv1d(nn.Module):
         # x = binary_input_no_grad.detach() - cliped_input.detach() + cliped_input
 
         real_weights = self.weight.view(self.shape)
-        binary_weights_no_grad = torch.sign(real_weights)
-        cliped_weights = torch.clamp(real_weights, -1.2, 1.2)
+        scaling_factor = torch.mean(torch.mean(abs(real_weights),dim=2,keepdim=True),dim=1,keepdim=True)
+        scaling_factor = scaling_factor.detach()
+        binary_weights_no_grad = scaling_factor * torch.sign(real_weights)
+        cliped_weights = torch.clamp(real_weights, -1.0, 1.0)
         binary_weights = binary_weights_no_grad.detach() - cliped_weights.detach() + cliped_weights
+
+        # real_weights = self.weight.view(self.shape)
+        # binary_weights_no_grad = torch.sign(real_weights)
+        # cliped_weights = torch.clamp(real_weights, -1.2, 1.2)
+        # binary_weights = binary_weights_no_grad.detach() - cliped_weights.detach() + cliped_weights
         y = F.conv1d(x, binary_weights, stride=self.stride, padding=self.padding)
 
         return y

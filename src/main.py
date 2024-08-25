@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
 
     # Training    
-    parser.add_argument('--batch_size', default=8, type=int,
+    parser.add_argument('--batch_size', default=2, type=int,
                         help='Batch size')
     parser.add_argument('--max_length', default=6, type=int,
                         help='max_length of mixture in training')
